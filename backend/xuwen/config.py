@@ -129,6 +129,18 @@ class Settings(BaseSettings):
     # 想恢复真流式（调试 / 测试）可设为 true。
     response_streaming_enabled: bool = False
 
+    # ----- 版本更新检查 -----
+    # 默认开启：后端启动时一次性调用 update_check_url 查询最新发布版本。
+    # 结果通过 /info 接口的 update 字段对外暴露，前端可据此显示升级提示。
+    # 设为 false 即完全静默（CI / 离线场景）。
+    # 后续要重新检查由前端"立即检查"按钮（POST /info/check-update）触发；
+    # 请求只会 GET 一个公开 URL，不传任何身份 / 配置 / API key。
+    update_check_enabled: bool = True
+    update_check_url: str = (
+        "https://api.github.com/repos/kldhsh123/Afterglow/releases/latest"
+    )
+    update_check_timeout_seconds: float = 8.0
+
     # ----- 视觉理解（vision / VLM）-----
     # 总开关。默认关闭，避免新用户配置出错。
     vision_enabled: bool = False

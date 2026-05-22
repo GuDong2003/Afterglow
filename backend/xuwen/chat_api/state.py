@@ -15,6 +15,7 @@ from xuwen.companion.life import LifeStateManager
 from xuwen.companion.relationship import RelationshipMemoryManager
 from xuwen.config import Settings
 from xuwen.core.metrics import MetricsRecorder
+from xuwen.core.update_check import UpdateChecker
 from xuwen.ingestion.embedder import EmbeddingClient
 from xuwen.memory.retriever import HybridRetriever
 from xuwen.memory.store import MemoryStore
@@ -37,6 +38,7 @@ class AppState:
     life: LifeStateManager
     relationship_memory: RelationshipMemoryManager
     responses_store: ResponsesStore
+    update_checker: UpdateChecker
     web_search: WebSearchClient | None = None
     web_fetch: WebFetchClient | None = None
 

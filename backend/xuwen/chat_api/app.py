@@ -33,6 +33,7 @@ from xuwen.companion.life import LifeStateManager
 from xuwen.companion.relationship import RelationshipMemoryManager
 from xuwen.config import Settings, get_settings
 from xuwen.core.metrics import MetricsRecorder
+from xuwen.core.update_check import UpdateChecker
 from xuwen.ingestion.embedder import EmbeddingClient
 from xuwen.memory.retriever import HybridRetriever
 from xuwen.memory.store import MemoryStore
@@ -84,6 +85,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             if resolved_settings.web_access_enabled and resolved_settings.web_fetch_enabled
             else None
         )
+        update_checker = UpdateChecker(
+            resolved_settings,
+            current_version=__version__,
+        )
 
         state = AppState(
             settings=resolved_settings,
@@ -100,6 +105,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             responses_store=ResponsesStore(
                 capacity=resolved_settings.responses_store_capacity,
             ),
+            update_checker=update_checker,
             web_search=web_search,
             web_fetch=web_fetch,
         )
@@ -108,9 +114,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         # dependency override：让各 route 通过 Depends(get_state) 拿到真实 state
         app.dependency_overrides[get_state] = lambda: state
 
+        # 版本更新检查：启动时 fire-and-forget 跑一次，结果（已是最新版 / 发现
+        # 新版本 / 失败 / 已禁用）会打印到 stdout。不阻塞 lifespan；不再周期重复，
+        # 想再查由前端"立即检查"按钮（POST /info/check-update）触发。
+        await update_checker.start()
+
         try:
             yield
         finally:
+            await update_checker.stop()
             await writeback.stop(drain=True)
             await embedder.aclose()
             await llm.aclose()

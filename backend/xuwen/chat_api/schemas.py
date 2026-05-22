@@ -181,6 +181,24 @@ class MemorySearchResponse(BaseModel):
     trace_id: str = ""
 
 
+class UpdateInfoPayload(BaseModel):
+    """版本更新检查结果，附在 /info 响应的 update 字段。
+
+    - check_enabled=false 时其它字段大多为 null（用户在 .env 关了检查）
+    - last_error 非空表示最近一次检查失败（网络 / API 限流等），前端可降级显示
+    """
+
+    check_enabled: bool
+    current_version: str
+    latest_version: str | None = None
+    is_outdated: bool = False
+    released_at: str | None = None
+    release_url: str | None = None
+    release_notes_preview: str | None = None
+    last_checked_at_ms: int | None = None
+    last_error: str | None = None
+
+
 class AppInfoResponse(BaseModel):
     """`/info` 端点返回应用元数据，供前端读 APP_NAME / slogan。"""
 
@@ -195,6 +213,7 @@ class AppInfoResponse(BaseModel):
     chat_model: str
     version: str
     has_persona_card: bool
+    update: UpdateInfoPayload | None = None
 
 
 class HealthResponse(BaseModel):

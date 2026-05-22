@@ -13,6 +13,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from xuwen import __version__
 from xuwen.chat_api.llm_client import LLMClient
 from xuwen.chat_api.middleware import install_exception_handlers, install_middleware
 from xuwen.chat_api.routes import chat as chat_route
@@ -111,7 +112,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app = FastAPI(
         title=resolved_settings.app_name,
         description=resolved_settings.app_slogan,
-        version="0.1.0",
+        version=__version__,
         lifespan=lifespan,
     )
 

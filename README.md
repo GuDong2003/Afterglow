@@ -18,6 +18,19 @@
 
 Issue 模板参考自一个我已经忘记来源的开源项目；这个模板我认为非常好用。如果你知道原始来源，欢迎联系我，我会补上准确来源和鸣谢。
 
+## 交流与支持
+
+- 项目交流 QQ 群：`330316577`
+- 我们的长期合作伙伴 [二次元论坛](https://www.ecylt.top/) 的 [二次元 API 中转站](https://api.223387.xyz/) 提供免费的 Embedding 模型 `Qwen3-Embedding-8B`。对于项目的支持，我们非常感谢。
+
+如果需要使用该 Embedding 模型，请在 `backend/.env` 中修改以下配置，并按服务说明填写对应的 `EMBEDDING_API_URL` / `EMBEDDING_API_KEY`：
+
+```env
+EMBEDDING_MODEL=Qwen3-Embedding-8B
+EMBEDDING_DIM=1024
+EMBEDDING_BATCH_SIZE=25
+```
+
 ---
 
 ## 🔒 数据隐私（必读）

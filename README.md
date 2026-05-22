@@ -56,10 +56,10 @@ EMBEDDING_BATCH_SIZE=25
 
 ```mermaid
 flowchart LR
-  User["用户 / 第三方程序"] --> API["backend FastAPI<br/>OpenAI 兼容 API"]
-  Frontend["frontend<br/>测试 / 调试 UI"] --> API
+  User["用户 / 第三方程序"] --> API["Afterglow FastAPI<br/>OpenAI 兼容 API"]
+  前端["前端<br/>测试 / 调试 UI"] --> API
 
-  subgraph Backend["backend 核心能力"]
+  subgraph Afterglow["Afterglow 核心能力"]
     API --> Auth["API 鉴权<br/>Trace ID"]
     Auth --> Retrieve["HybridRetriever<br/>向量召回 + RRF 融合"]
     Auth --> Life["生活状态 / 网页意图小模型"]
@@ -96,7 +96,7 @@ flowchart LR
 ```mermaid
 mindmap
   root((Afterglow))
-    backend 项目主体
+    Afterglow 项目主体
       导入与清洗
       向量库
       混合检索
@@ -105,7 +105,7 @@ mindmap
       联网能力
       OpenAI 兼容 API
       诊断链路
-    frontend 测试调试
+    前端 测试调试
       聊天界面
       记忆溯源
       设置页

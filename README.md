@@ -249,7 +249,7 @@ Afterglow/
 │   ├── package.json
 │   └── README.md            # 测试/调试前端说明
 │
-├── 开发缓存/                 # 你的 QQ 导出 JSON（.gitignore）
+└── 开发缓存/                 # 你的 QQ 导出 JSON（.gitignore）
 ```
 
 ---

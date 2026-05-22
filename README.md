@@ -16,6 +16,8 @@
 
 感谢 [LINUX DO](linux.do) 各位佬友对项目实现提出的建议，Afterglow 的很多实现细节都来自这些反馈的反复打磨。
 
+Issue 模板参考自一个我已经忘记来源的开源项目；这个模板我认为非常好用。如果你知道原始来源，欢迎联系我，我会补上准确来源和鸣谢。
+
 ---
 
 ## 🔒 数据隐私（必读）
@@ -233,7 +235,6 @@ Afterglow/
 │   │   ├── persona/         # 离线人格画像、prompt 模板（Jinja2）
 │   │   └── chat_api/        # FastAPI 服务（OpenAI 兼容）
 │   ├── scripts/             # 离线脚本（导入、画像、检索评估）
-│   ├── tests/               # 103 个测试
 │   ├── pyproject.toml
 │   └── README.md            # 后端详细文档
 │

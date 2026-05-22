@@ -1,0 +1,35 @@
+/.claude
+/开发缓存
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
+.coverage
+htmlcov/
+
+# Backend 运行时数据
+backend/.data/
+backend/.env
+
+# Node / 前端（预留）
+node_modules/
+dist/
+.vite/
+*.log
+
+# IDE
+.idea/
+.vscode/
+*.swp
+.DS_Store
+/backend/tests

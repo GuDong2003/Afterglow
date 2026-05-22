@@ -1,0 +1,89 @@
+[project]
+name = "xuwen"
+version = "0.1.0"
+description = "Afterglow（续温）—— 基于真实聊天记录的 RAG 陪伴系统，把曾经对你好的话续成往后的陪伴"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+license = "AGPL-3.0-or-later"
+authors = [{ name = "Afterglow Contributors" }]
+dependencies = [
+  "fastapi>=0.115,<1",
+  "uvicorn[standard]>=0.32,<1",
+  "pydantic>=2.9,<3",
+  "pydantic-settings>=2.6,<3",
+  "lancedb>=0.15,<1",
+  "pyarrow>=17,<22",
+  "openai>=1.54,<3",
+  "httpx>=0.27,<1",
+  "tenacity>=9,<10",
+  "orjson>=3.10,<4",
+  "python-multipart>=0.0.20,<1",
+  "aiofiles>=24,<25",
+  "jieba>=0.42,<1",
+  "jinja2>=3.1,<4",
+  "numpy>=1.26,<3",
+  "rich>=13,<15",
+  "pyyaml>=6,<7",
+  "pypdf>=5,<6",
+  "python-docx>=1.1,<2",
+  "openpyxl>=3.1,<4",
+  "beautifulsoup4>=4.12,<5",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8,<10",
+  "pytest-asyncio>=0.24,<2",
+  "respx>=0.21,<1",
+  "ruff>=0.6,<1",
+  "mypy>=1.11,<2",
+]
+
+[project.scripts]
+xuwen = "xuwen.ingestion.cli:main"
+
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["xuwen"]
+
+[tool.hatch.build.targets.wheel.shared-data]
+"xuwen/persona/templates" = "xuwen/persona/templates"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "RUF"]
+# RUF001/002/003：中文标点告警，本项目面向中文用户，预期保留全角符号
+ignore = ["E501", "RUF001", "RUF002", "RUF003"]
+
+[tool.ruff.lint.per-file-ignores]
+# FastAPI 的 Depends() 必须以默认参数形式出现；B008 在 routes 是误报
+"xuwen/chat_api/routes/*.py" = ["B008"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+filterwarnings = [
+  # jieba 上游遗留的 re 转义字符警告，与本项目无关
+  "ignore::SyntaxWarning:jieba.*",
+]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unused_ignores = true
+
+# 第三方库缺类型存根：跳过分析（功能不受影响）
+[[tool.mypy.overrides]]
+module = ["jieba", "jieba.*", "lancedb", "lancedb.*", "pyarrow", "pyarrow.*", "yaml", "openpyxl", "openpyxl.*", "docx", "docx.*", "bs4", "bs4.*"]
+ignore_missing_imports = true
+
+# scripts/ 是离线工具，不强制严格类型
+[[tool.mypy.overrides]]
+module = ["scripts.*"]
+ignore_errors = true

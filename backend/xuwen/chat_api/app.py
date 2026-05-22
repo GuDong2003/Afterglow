@@ -1,0 +1,131 @@
+"""FastAPI app factory + 生命周期管理。
+
+设计：
+- `AppState` 在 `chat_api/state.py` 中定义，避免循环引用
+- 通过 `app.dependency_overrides[get_state]` 注入真实实例
+- 关闭时 drain writeback 队列、关闭 httpx clients
+"""
+
+from __future__ import annotations
+
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI
+
+from xuwen.chat_api.llm_client import LLMClient
+from xuwen.chat_api.middleware import install_exception_handlers, install_middleware
+from xuwen.chat_api.routes import chat as chat_route
+from xuwen.chat_api.routes import companion as companion_route
+from xuwen.chat_api.routes import debug as debug_route
+from xuwen.chat_api.routes import documents as documents_route
+from xuwen.chat_api.routes import health as health_route
+from xuwen.chat_api.routes import images as images_route
+from xuwen.chat_api.routes import memory as memory_route
+from xuwen.chat_api.routes import stickers as stickers_route
+from xuwen.chat_api.state import AppState, get_state
+from xuwen.chat_api.web_fetch import WebFetchClient
+from xuwen.chat_api.web_search import WebSearchClient
+from xuwen.companion.life import LifeStateManager
+from xuwen.companion.relationship import RelationshipMemoryManager
+from xuwen.config import Settings, get_settings
+from xuwen.core.metrics import MetricsRecorder
+from xuwen.ingestion.embedder import EmbeddingClient
+from xuwen.memory.retriever import HybridRetriever
+from xuwen.memory.store import MemoryStore
+from xuwen.memory.writer import WritebackQueue
+
+
+def create_app(settings: Settings | None = None) -> FastAPI:
+    """构造 FastAPI app。
+
+    可传入 settings 方便测试覆盖；默认从环境读取。
+    """
+    resolved_settings = settings or get_settings()
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+        store = MemoryStore(resolved_settings)
+        await store.connect()
+        store.ensure_tables()
+
+        embedder = EmbeddingClient(resolved_settings)
+        llm = LLMClient(resolved_settings)
+        life_llm = LLMClient(
+            resolved_settings,
+            api_url=resolved_settings.resolved_life_api_url,
+            api_key=resolved_settings.resolved_life_api_key.get_secret_value(),
+        )
+        retriever = HybridRetriever(resolved_settings, store=store, embedder=embedder)
+        writeback = WritebackQueue(resolved_settings, store=store, embedder=embedder)
+        await writeback.start()
+        metrics = MetricsRecorder(capacity=resolved_settings.metrics_capacity)
+        life = LifeStateManager(resolved_settings)
+        relationship_memory = RelationshipMemoryManager(
+            resolved_settings,
+            store=store,
+            embedder=embedder,
+        )
+        web_search = (
+            WebSearchClient(resolved_settings)
+            if resolved_settings.web_access_enabled
+            else None
+        )
+        web_fetch = (
+            WebFetchClient(resolved_settings)
+            if resolved_settings.web_access_enabled and resolved_settings.web_fetch_enabled
+            else None
+        )
+
+        state = AppState(
+            settings=resolved_settings,
+            store=store,
+            embedder=embedder,
+            llm=llm,
+            life_llm=life_llm,
+            retriever=retriever,
+            writeback=writeback,
+            metrics=metrics,
+            life=life,
+            relationship_memory=relationship_memory,
+            web_search=web_search,
+            web_fetch=web_fetch,
+        )
+        app.state.xuwen = state
+
+        # dependency override：让各 route 通过 Depends(get_state) 拿到真实 state
+        app.dependency_overrides[get_state] = lambda: state
+
+        try:
+            yield
+        finally:
+            await writeback.stop(drain=True)
+            await embedder.aclose()
+            await llm.aclose()
+            await life_llm.aclose()
+            if web_search is not None:
+                await web_search.aclose()
+            if web_fetch is not None:
+                await web_fetch.aclose()
+
+    app = FastAPI(
+        title=resolved_settings.app_name,
+        description=resolved_settings.app_slogan,
+        version="0.1.0",
+        lifespan=lifespan,
+    )
+
+    install_middleware(app, resolved_settings)
+    install_exception_handlers(app)
+
+    app.include_router(health_route.router)
+    app.include_router(memory_route.router)
+    app.include_router(chat_route.router)
+    app.include_router(images_route.router)
+    app.include_router(documents_route.router)
+    app.include_router(stickers_route.router)
+    app.include_router(companion_route.router)
+    if resolved_settings.debug_endpoints_enabled:
+        app.include_router(debug_route.router)
+
+    return app
